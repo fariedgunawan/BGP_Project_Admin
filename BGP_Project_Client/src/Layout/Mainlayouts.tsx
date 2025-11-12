@@ -4,13 +4,12 @@ import { Outlet } from "react-router-dom";
 
 const Mainlayouts = () => {
   return (
-    <div className="flex">
+    <div className="page-container flex flex-row min-h-screen bg-[#F5F7FF] gap-2">
       <Sidebar />
-      <div className="ml-64 w-full">
+      <div className="sidebar-container flex flex-col w-full">
         <Navbar />
-        <div className="pt-20 px-6">
-          <Outlet />
-        </div>
+
+        <Outlet />
       </div>
     </div>
   );

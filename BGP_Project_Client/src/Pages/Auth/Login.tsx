@@ -1,14 +1,60 @@
-import { Button, Input } from "@heroui/react";
+import { Button, Input, Spinner } from "@heroui/react";
+import { useNavigate } from "react-router-dom";
 import login from "../../assets/images/login.jpg";
+import { useState } from "react";
+
 const Login = () => {
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        "https://lorembe-cedvhgckgdesh6ht.southeastasia-01.azurewebsites.net/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Login gagal, periksa kembali data Anda!");
+        setLoading(false);
+        return;
+      }
+
+      document.cookie = `token=${data.token}; path=/;`;
+      document.cookie = `role=${data.user.role}; path=/;`;
+
+      if (data.user.role === "SuperAdmin") {
+        navigate("/AdminDashboard");
+      } else {
+        navigate("/AdminManageSatpam");
+      }
+    } catch (err) {
+      console.error("Login Error:", err);
+      setError("Terjadi kesalahan saat login.");
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="body-of-login flex flex-row h-screen items-center justify-center gap-20 bg-[#F5F7FF]">
       {/* Image Section */}
       <div className="image-section w-1/2">
-        <img src={login} className="h-screen" alt="" />
+        <img src={login} className="h-screen" alt="Login" />
       </div>
 
-      {/* form section */}
+      {/* Form Section */}
       <div className="form-section w-1/2 flex flex-col items-start pr-[200px]">
         <h2 className="font-bold text-[33px] text-[#122C93]">Login</h2>
 
@@ -20,7 +66,10 @@ const Login = () => {
           type="text"
           label="Username"
           className="mt-5"
-        ></Input>
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+
         <h2 className="font-semibold text-[20px] mt-5 text-[#122C93]">
           Password
         </h2>
@@ -29,17 +78,32 @@ const Login = () => {
           type="password"
           label="Password"
           className="mt-5"
-        ></Input>
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        {error && <p className="text-red-500 mt-3">{error}</p>}
+
         <h2 className="text-[#122C93] text-[15px] font-light mt-5">
-          Lupa Password ?{" "}
+          Lupa Password ?
         </h2>
+
         <Button
           variant="solid"
           color="primary"
           size="lg"
-          className="mt-10 w-full font-semibold bg-[#122C93]"
+          className="mt-10 w-full font-semibold bg-[#122C93] flex items-center justify-center"
+          onClick={handleLogin}
+          disabled={loading}
         >
-          Login
+          {loading ? (
+            <Spinner
+              variant="default"
+              classNames={{ label: "text-white mt-0 ml-2" }}
+            />
+          ) : (
+            "Login"
+          )}
         </Button>
       </div>
     </div>
