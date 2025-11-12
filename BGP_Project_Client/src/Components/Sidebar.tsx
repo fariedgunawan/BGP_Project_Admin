@@ -10,20 +10,26 @@ import { TbLogout } from "react-icons/tb";
 const Sidebar = () => {
   const location = useLocation();
 
+  const role = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("role="))
+    ?.split("=")[1];
+
   const menu = [
-    { name: "Dashboard", icon: <RiDashboardFill />, path: "/" },
+    { name: "Dashboard", icon: <RiDashboardFill />, path: "/AdminDashboard" },
     {
       name: "Manage Satpam",
       icon: <IoPersonAdd />,
-      path: "/manage-satpam",
+      path: "/AdminManageSatpam",
     },
     {
       name: "Manage Admin",
       icon: <IoMdSettings />,
-      path: "/manage-admin",
+      path: role === "SuperAdmin" ? "/AdminManageAdmin" : "#", // nonaktifkan link jika bukan superadmin
+      disabled: role !== "SuperAdmin",
     },
-    { name: "Manage Pos", icon: <AiFillHome />, path: "/manage-pos" },
-    { name: "Manage Shift", icon: <GoClockFill />, path: "/manage-shift" },
+    { name: "Manage Pos", icon: <AiFillHome />, path: "/AdminManagePos" },
+    { name: "Manage Shift", icon: <GoClockFill />, path: "/AdminManageShift" },
     {
       name: "Download Rekap",
       icon: <MdFileDownload />,
@@ -31,18 +37,28 @@ const Sidebar = () => {
     },
   ];
 
+  const handleLogout = () => {
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    window.location.href = "/";
+  };
+
   return (
-    <div className="w-64 bg-white shadow-md h-screen fixed left-0 top-0 flex flex-col justify-between">
+    <div className="side-bar-section bg-[#FFFFFF] w-[300px] h-screen flex flex-col justify-between p-4">
       <div>
-        <h1 className="text-xl font-bold text-blue-800 px-6 py-4">
+        <h1 className="text-[23px] font-bold text-[#122C93] text-center py-5">
           PT. Bima Global
         </h1>
-        <ul className="space-y-2 px-3">
+        <ul className="text-start text-[#122C93] text-[18px] space-y-2 mt-5 font-medium">
           {menu.map((item) => (
-            <li key={item.path}>
+            <li key={item.name}>
               <Link
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-blue-50 ${
+                to={item.disabled ? "#" : item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+                  item.disabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-blue-50"
+                } ${
                   location.pathname === item.path
                     ? "bg-blue-100 font-medium"
                     : ""
@@ -56,7 +72,10 @@ const Sidebar = () => {
         </ul>
       </div>
 
-      <button className="flex items-center gap-2 text-red-600 px-4 py-3 hover:bg-red-50">
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-2 text-red-600 px-4 py-3 hover:bg-red-50 hover:rounded-xl"
+      >
         <TbLogout size={18} />
         Keluar
       </button>
