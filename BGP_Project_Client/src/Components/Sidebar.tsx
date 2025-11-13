@@ -33,7 +33,7 @@ const Sidebar = () => {
     {
       name: "Download Rekap",
       icon: <MdFileDownload />,
-      path: "/download-rekap",
+      path: "/AdminDownloadRekap",
     },
   ];
 

@@ -8,6 +8,7 @@ import AdminManageAdmin from "./Pages/AdminManageAdmin";
 import AdminManageShift from "./Pages/AdminManageShift";
 import AdminManagePos from "./Pages/AdminManagePos";
 import PrivateRoute from "./Pages/Utils/PrivateRoute";
+import AdminDownloadRekap from "./Pages/AdminDownloadRekap";
 function App() {
   return (
     <Router>
@@ -23,6 +24,7 @@ function App() {
             <Route path="/AdminManageAdmin" element={<AdminManageAdmin />} />
             <Route path="/AdminManageShift" element={<AdminManageShift />} />
             <Route path="/AdminManagePos" element={<AdminManagePos />} />
+            <Route path="/AdminDownloadRekap" element={<AdminDownloadRekap />} />
             {/* Buat selanjutnya ya */}
           </Route>
           {/* ada side bar sama navbarnya */}
