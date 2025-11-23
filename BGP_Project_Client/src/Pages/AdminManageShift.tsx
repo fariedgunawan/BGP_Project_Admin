@@ -18,19 +18,13 @@ import { Select, SelectItem } from "@heroui/react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 export const animals = [
-  { key: "cat", label: "Cat" },
-  { key: "dog", label: "Dog" },
-  { key: "elephant", label: "Elephant" },
-  { key: "lion", label: "Lion" },
-  { key: "tiger", label: "Tiger" },
-  { key: "giraffe", label: "Giraffe" },
-  { key: "dolphin", label: "Dolphin" },
-  { key: "penguin", label: "Penguin" },
-  { key: "zebra", label: "Zebra" },
-  { key: "shark", label: "Shark" },
-  { key: "whale", label: "Whale" },
-  { key: "otter", label: "Otter" },
-  { key: "crocodile", label: "Crocodile" },
+  { key: "1", label: "Cat" },
+  { key: "2", label: "Dog" },
+  { key: "3", label: "Elephant" },
+  { key: "4", label: "Lion" },
+  { key: "5", label: "Tiger" },
+  { key: "6", label: "Giraffe" },
+  { key: "7", label: "Dolphin" },
 ];
 
 const AdminManageShift = () => {
@@ -42,21 +36,21 @@ const AdminManageShift = () => {
     {
       id: 1,
       hari: "Senin",
-      sesi: "07:00 - 15:00",
+      shift: "08:00 - 16:00",
       nama: "Yohanes",
       nip: "12345",
     },
     {
       id: 2,
       hari: "Senin",
-      sesi: "07:00 - 15:00",
+      shift: "07:00 - 15:00",
       nama: "Yohanes",
       nip: "12345",
     },
     {
       id: 3,
       hari: "Senin",
-      sesi: "07:00 - 15:00",
+      shift: "07:00 - 15:00",
       nama: "Yohanes",
       nip: "12345",
     },
@@ -188,7 +182,7 @@ const AdminManageShift = () => {
                 <TableRow key={item.id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{item.hari}</TableCell>
-                  <TableCell>{item.sesi}</TableCell>
+                  <TableCell>{item.shift}</TableCell>
                   <TableCell>{item.nama}</TableCell>
                   <TableCell>{item.nip}</TableCell>
                   <TableCell>

@@ -9,6 +9,7 @@ import AdminManageShift from "./Pages/AdminManageShift";
 import AdminManagePos from "./Pages/AdminManagePos";
 import PrivateRoute from "./Pages/Utils/PrivateRoute";
 import AdminDownloadRekap from "./Pages/AdminDownloadRekap";
+import AdminManagePosUtama from "./Pages/AdminManagePosUtama";
 function App() {
   return (
     <Router>
@@ -23,8 +24,15 @@ function App() {
             <Route path="/AdminManageSatpam" element={<AdminManageSatpam />} />
             <Route path="/AdminManageAdmin" element={<AdminManageAdmin />} />
             <Route path="/AdminManageShift" element={<AdminManageShift />} />
-            <Route path="/AdminManagePos" element={<AdminManagePos />} />
-            <Route path="/AdminDownloadRekap" element={<AdminDownloadRekap />} />
+            <Route path="/AdminManagePos" element={<AdminManagePos />} />\
+            <Route
+              path="/AdminManagePosUtama"
+              element={<AdminManagePosUtama />}
+            />
+            <Route
+              path="/AdminDownloadRekap"
+              element={<AdminDownloadRekap />}
+            />
             {/* Buat selanjutnya ya */}
           </Route>
           {/* ada side bar sama navbarnya */}

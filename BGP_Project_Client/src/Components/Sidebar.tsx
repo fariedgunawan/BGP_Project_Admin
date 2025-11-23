@@ -4,7 +4,7 @@ import { IoPersonAdd } from "react-icons/io5";
 import { IoMdSettings } from "react-icons/io";
 import { AiFillHome } from "react-icons/ai";
 import { GoClockFill } from "react-icons/go";
-import { MdFileDownload } from "react-icons/md";
+import { MdFileDownload, MdCoPresent } from "react-icons/md";
 import { TbLogout } from "react-icons/tb";
 
 const Sidebar = () => {
@@ -29,6 +29,11 @@ const Sidebar = () => {
       disabled: role !== "SuperAdmin",
     },
     { name: "Manage Pos", icon: <AiFillHome />, path: "/AdminManagePos" },
+    {
+      name: "Manage Pos Utama",
+      icon: <MdCoPresent />,
+      path: "/AdminManagePosUtama",
+    },
     { name: "Manage Shift", icon: <GoClockFill />, path: "/AdminManageShift" },
     {
       name: "Download Rekap",
