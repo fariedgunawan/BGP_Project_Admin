@@ -59,7 +59,7 @@ function LocationMarker({ position, setPosition }: LocationMarkerProps) {
   ) : null;
 }
 
-const AdminManagePos = () => {
+const AdminManagePosUtama = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedPosition, setSelectedPosition] = useState<LatLng | null>(null);
   const [dataPos, setDataPos] = useState<any[]>([]);
@@ -241,7 +241,7 @@ const AdminManagePos = () => {
         {/* Header */}
         <div className="header-container flex flex-row items-center justify-between mt-5">
           <h2 className="font-semibold text-[25px] text-[#122C93]">
-            Manage Pos Patroli
+            Manage Pos Utama
           </h2>
           <Button
             variant="solid"
@@ -419,4 +419,4 @@ const AdminManagePos = () => {
   );
 };
 
-export default AdminManagePos;
+export default AdminManagePosUtama;
