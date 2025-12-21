@@ -1,5 +1,5 @@
 // AdminManageSatpam.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Button,
   Table,
@@ -11,6 +11,7 @@ import {
   Input,
   Spinner,
   addToast,
+  Pagination, // Import Pagination
 } from "@heroui/react";
 
 import {
@@ -29,13 +30,13 @@ interface Satpam {
   asal_daerah: string;
   nip: string;
   no_telp: string;
-  gambar: string;
+  gambar_path?: string;
+  foto_satpam?: string;
   milvus_id?: string;
   created_at?: string;
 }
 
-const API_BASE =
-  "https://lorembe-cedvhgckgdesh6ht.southeastasia-01.azurewebsites.net";
+const API_BASE = "http://localhost:5500";
 
 const AdminManageSatpam: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -44,6 +45,10 @@ const AdminManageSatpam: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  // --- PAGINATION STATES ---
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 13;
 
   // form state (shared for add & edit)
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
@@ -63,12 +68,21 @@ const AdminManageSatpam: React.FC = () => {
     return token;
   };
 
+  const formatTanggal = (dateString?: string) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+
   // fetch data
   const fetchSatpam = async () => {
     setLoading(true);
     try {
       const token = getToken();
-      const res = await fetch(`${API_BASE}/api/satpam`, {
+      const res = await fetch(`${API_BASE}/v1/satpams`, {
         method: "GET",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
@@ -78,7 +92,7 @@ const AdminManageSatpam: React.FC = () => {
         throw new Error(`HTTP ${res.status}`);
       }
       const data = await res.json();
-      setDataSatpam(Array.isArray(data) ? data : []);
+      setDataSatpam(Array.isArray(data.satpams) ? data.satpams : []);
     } catch (error) {
       console.error("Fetch satpam error:", error);
       alert("Gagal mengambil data satpam. Cek console untuk detail.");
@@ -91,6 +105,15 @@ const AdminManageSatpam: React.FC = () => {
   useEffect(() => {
     fetchSatpam();
   }, []);
+
+  // --- PAGINATION LOGIC ---
+  const pages = Math.ceil(dataSatpam.length / rowsPerPage);
+
+  const items = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    return dataSatpam.slice(start, end);
+  }, [page, dataSatpam]);
 
   // reset form
   const resetForm = () => {
@@ -112,15 +135,38 @@ const AdminManageSatpam: React.FC = () => {
   };
 
   // open edit modal and fill form
-  const openEditModal = (item: Satpam) => {
+  const openEditModal = async (item: Satpam) => {
     setIsEditMode(true);
     setEditingId(item.id);
-    setFormNama(item.nama ?? "");
-    setFormAsal(item.asal_daerah ?? "");
-    setFormNip(item.nip ?? "");
-    setFormNoTelp(item.no_telp ?? "");
-    setFormFile(null); // user can choose new file to replace
-    setPreviewImage(item.gambar ? `${API_BASE}/${item.gambar}` : null);
+
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/v1/satpams/${item.id}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      const data = await res.json();
+
+      if (data && data.satpam) {
+        const s = data.satpam;
+        setFormNama(s.nama ?? "");
+        setFormAsal(s.asal_daerah ?? "");
+        setFormNip(s.nip ?? "");
+        setFormNoTelp(s.no_telp ?? "");
+        setFormFile(null);
+
+        if (s.gambar_path) {
+          const cleanPath = s.gambar_path.startsWith("/")
+            ? s.gambar_path
+            : `/${s.gambar_path}`;
+          setPreviewImage(`${API_BASE}/uploads${cleanPath}`);
+        } else {
+          setPreviewImage(null);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching detail:", err);
+    }
+
     onOpen();
   };
 
@@ -135,14 +181,13 @@ const AdminManageSatpam: React.FC = () => {
       fd.append("nip", formNip);
       fd.append("no_telp", formNoTelp);
       if (formFile) {
-        fd.append("gambar", formFile);
+        fd.append("foto_satpam", formFile);
       }
 
-      const res = await fetch(`${API_BASE}/api/satpam`, {
+      const res = await fetch(`${API_BASE}/v1/satpams`, {
         method: "POST",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
-          // DO NOT set Content-Type, browser will set multipart boundary
         },
         body: fd,
       });
@@ -152,7 +197,6 @@ const AdminManageSatpam: React.FC = () => {
         throw new Error(`Create failed: ${res.status} - ${text}`);
       }
 
-      // sukses
       await fetchSatpam();
       resetForm();
       onClose();
@@ -161,12 +205,11 @@ const AdminManageSatpam: React.FC = () => {
         description: "Data satpam berhasil ditambahkan.",
         variant: "flat",
         timeout: 3000,
-        shouldShowTimeoutProgress: true,
         color: "success",
       });
     } catch (error) {
       console.error("Add error:", error);
-      alert("Gagal menambah satpam. Cek console untuk detail.");
+      alert("Gagal menambah satpam.");
     } finally {
       setSubmitting(false);
     }
@@ -184,10 +227,10 @@ const AdminManageSatpam: React.FC = () => {
       fd.append("nip", formNip);
       fd.append("no_telp", formNoTelp);
       if (formFile) {
-        fd.append("gambar", formFile);
+        fd.append("foto_satpam", formFile);
       }
 
-      const res = await fetch(`${API_BASE}/api/satpam/${editingId}`, {
+      const res = await fetch(`${API_BASE}/v1/satpams/${editingId}`, {
         method: "PUT",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
@@ -208,12 +251,11 @@ const AdminManageSatpam: React.FC = () => {
         description: "Data satpam berhasil diupdate.",
         variant: "flat",
         timeout: 3000,
-        shouldShowTimeoutProgress: true,
         color: "success",
       });
     } catch (error) {
       console.error("Edit error:", error);
-      alert("Gagal mengupdate satpam. Cek console untuk detail.");
+      alert("Gagal mengupdate satpam.");
     } finally {
       setSubmitting(false);
     }
@@ -221,9 +263,10 @@ const AdminManageSatpam: React.FC = () => {
 
   // delete
   const handleDelete = async (id: number) => {
+    if (!confirm("Apakah anda yakin ingin menghapus data ini?")) return;
     try {
       const token = getToken();
-      const res = await fetch(`${API_BASE}/api/satpam/${id}`, {
+      const res = await fetch(`${API_BASE}/v1/satpams/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
@@ -235,23 +278,20 @@ const AdminManageSatpam: React.FC = () => {
         throw new Error(`Delete failed: ${res.status} - ${text}`);
       }
 
-      // refresh
       await fetchSatpam();
       addToast({
         title: "Berhasil",
         description: "Data satpam berhasil dihapus.",
         variant: "flat",
         timeout: 3000,
-        shouldShowTimeoutProgress: true,
         color: "danger",
       });
     } catch (error) {
       console.error("Delete error:", error);
-      alert("Gagal menghapus satpam. Cek console untuk detail.");
+      alert("Gagal menghapus satpam.");
     }
   };
 
-  // handle submit (add or edit)
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (isEditMode) {
@@ -285,6 +325,20 @@ const AdminManageSatpam: React.FC = () => {
             shadow="none"
             isStriped
             className="rounded-xl border border-gray-200"
+            bottomContent={
+              pages > 0 ? (
+                <div className="flex w-full justify-center">
+                  <Pagination
+                    showControls
+                    showShadow
+                    color="primary"
+                    page={page}
+                    total={pages}
+                    onChange={(page) => setPage(page)}
+                  />
+                </div>
+              ) : null
+            }
           >
             <TableHeader>
               <TableColumn>No</TableColumn>
@@ -292,40 +346,28 @@ const AdminManageSatpam: React.FC = () => {
               <TableColumn>NIP</TableColumn>
               <TableColumn>Asal Daerah</TableColumn>
               <TableColumn>No Telp</TableColumn>
+              <TableColumn>Created At</TableColumn>
               <TableColumn className="text-center">Action</TableColumn>
             </TableHeader>
 
             <TableBody
-              items={
-                loading ? [] : dataSatpam.map((it, i) => ({ ...it, no: i + 1 }))
-              }
               emptyContent={loading ? <Spinner size="lg" /> : "Tidak ada data"}
             >
-              {(item: Satpam & { no: number }) => (
+              {items.map((item, index) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.no}</TableCell>
+                  <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
                   <TableCell>{item.nama}</TableCell>
                   <TableCell>{item.nip}</TableCell>
                   <TableCell>{item.asal_daerah}</TableCell>
                   <TableCell>{item.no_telp}</TableCell>
+                  <TableCell>{formatTanggal(item.created_at)}</TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-3">
                       <Button
                         size="sm"
                         className="bg-[#02A758] text-white font-semibold"
                         startContent={<FaEdit />}
-                        onPress={() =>
-                          openEditModal({
-                            id: item.id,
-                            nama: item.nama,
-                            asal_daerah: item.asal_daerah,
-                            nip: item.nip,
-                            no_telp: item.no_telp,
-                            gambar: item.gambar,
-                            milvus_id: item.milvus_id,
-                            created_at: item.created_at,
-                          })
-                        }
+                        onPress={() => openEditModal(item)}
                       >
                         Edit
                       </Button>
@@ -340,7 +382,7 @@ const AdminManageSatpam: React.FC = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </div>
@@ -373,9 +415,7 @@ const AdminManageSatpam: React.FC = () => {
                           placeholder="Masukan nama"
                           labelPlacement="outside-top"
                           value={formNama}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setFormNama(e.target.value)
-                          }
+                          onChange={(e) => setFormNama(e.target.value)}
                           required
                         />
                         <Input
@@ -386,9 +426,7 @@ const AdminManageSatpam: React.FC = () => {
                           placeholder="Masukan asal"
                           labelPlacement="outside-top"
                           value={formAsal}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setFormAsal(e.target.value)
-                          }
+                          onChange={(e) => setFormAsal(e.target.value)}
                           required
                         />
                       </div>
@@ -402,9 +440,7 @@ const AdminManageSatpam: React.FC = () => {
                           placeholder="Masukan NIP"
                           labelPlacement="outside-top"
                           value={formNip}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setFormNip(e.target.value)
-                          }
+                          onChange={(e) => setFormNip(e.target.value)}
                           required
                         />
                         <Input
@@ -415,9 +451,7 @@ const AdminManageSatpam: React.FC = () => {
                           placeholder="Masukan No Hp"
                           labelPlacement="outside-top"
                           value={formNoTelp}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setFormNoTelp(e.target.value)
-                          }
+                          onChange={(e) => setFormNoTelp(e.target.value)}
                           required
                         />
                       </div>
@@ -425,11 +459,22 @@ const AdminManageSatpam: React.FC = () => {
 
                     <div className="flex items-center gap-4">
                       {previewImage && (
-                        <div className="mt-3">
+                        <div className="mt-3 flex flex-col gap-1">
+                          <span className="text-tiny text-gray-500">
+                            Preview Foto:
+                          </span>
                           <img
                             src={previewImage}
-                            alt="Preview"
-                            className="w-28 h-28 object-cover rounded-lg border"
+                            alt="Preview Satpam"
+                            className="w-28 h-28 object-cover rounded-lg border-2 border-gray-200 shadow-sm"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
+                              console.error(
+                                "Gagal memuat gambar di URL:",
+                                previewImage
+                              );
+                            }}
                           />
                         </div>
                       )}
@@ -477,9 +522,7 @@ const AdminManageSatpam: React.FC = () => {
                     {submitting ? (
                       <div className="flex items-center gap-2">
                         <Spinner size="sm" />
-                        <span>
-                          {isEditMode ? "Menyimpan..." : "Menyimpan..."}
-                        </span>
+                        <span>Menyimpan...</span>
                       </div>
                     ) : (
                       <span>{isEditMode ? "Update" : "Simpan +"}</span>

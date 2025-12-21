@@ -1,10 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { RiDashboardFill } from "react-icons/ri";
 import { IoPersonAdd } from "react-icons/io5";
 import { IoMdSettings } from "react-icons/io";
 import { AiFillHome } from "react-icons/ai";
 import { GoClockFill } from "react-icons/go";
-import { MdFileDownload, MdCoPresent } from "react-icons/md";
+import {
+  MdFileDownload,
+  MdCoPresent,
+  MdOutlineManageHistory,
+} from "react-icons/md";
 import { TbLogout } from "react-icons/tb";
 
 const Sidebar = () => {
@@ -16,7 +19,6 @@ const Sidebar = () => {
     ?.split("=")[1];
 
   const menu = [
-    { name: "Dashboard", icon: <RiDashboardFill />, path: "/AdminDashboard" },
     {
       name: "Manage Satpam",
       icon: <IoPersonAdd />,
@@ -35,6 +37,11 @@ const Sidebar = () => {
       path: "/AdminManagePosUtama",
     },
     { name: "Manage Shift", icon: <GoClockFill />, path: "/AdminManageShift" },
+    {
+      name: "Manage Patroli",
+      icon: <MdOutlineManageHistory />,
+      path: "/AdminManagePosPatroli",
+    },
     {
       name: "Download Rekap",
       icon: <MdFileDownload />,
