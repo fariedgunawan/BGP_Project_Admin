@@ -15,14 +15,11 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch(
-        "https://lorembe-cedvhgckgdesh6ht.southeastasia-01.azurewebsites.net/api/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        }
-      );
+      const response = await fetch("http://localhost:5500/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
       const data = await response.json();
 
@@ -31,18 +28,37 @@ const Login = () => {
         setLoading(false);
         return;
       }
-
       document.cookie = `token=${data.token}; path=/;`;
-      document.cookie = `role=${data.user.role}; path=/;`;
 
-      if (data.user.role === "SuperAdmin") {
-        navigate("/AdminDashboard");
-      } else {
-        navigate("/AdminManageSatpam");
+      try {
+        const base64Url = data.token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          window
+            .atob(base64)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+        );
+
+        const decoded = JSON.parse(jsonPayload);
+        const userRole = decoded.role;
+
+        document.cookie = `role=${userRole}; path=/;`;
+
+        if (userRole === "SuperAdmin") {
+          navigate("/AdminManageShift");
+        } else {
+          navigate("/AdminManageSatpam");
+        }
+      } catch (decodeErr) {
+        console.error("Error decoding token:", decodeErr);
+        setError("Format token tidak dikenali.");
       }
     } catch (err) {
       console.error("Login Error:", err);
       setError("Terjadi kesalahan saat login.");
+    } finally {
       setLoading(false);
     }
   };

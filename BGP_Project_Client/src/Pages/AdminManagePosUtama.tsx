@@ -74,8 +74,7 @@ const AdminManagePosUtama = () => {
   const [loading, setLoading] = useState(false);
   const [loadingTable, setLoadingTable] = useState(false);
 
-  const API_URL =
-    "https://lorembe-cedvhgckgdesh6ht.southeastasia-01.azurewebsites.net/api/pos";
+  const API_URL = "http://localhost:5500/v1/poss";
 
   // Ambil token dari cookie
   const getToken = () => {
@@ -90,18 +89,21 @@ const AdminManagePosUtama = () => {
   const fetchData = async () => {
     try {
       setLoadingTable(true);
-      const res = await fetch(API_URL, {
+      // GET All tetap menggunakan query param tipe=jaga sesuai aturan awal
+      const res = await fetch(`${API_URL}?tipe=utama`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
-      setDataPos(data);
+
+      // Sesuai respons JSON Anda: data.results
+      if (data && Array.isArray(data.results)) {
+        setDataPos(data.results);
+      } else {
+        setDataPos([]);
+      }
     } catch (error) {
       console.error("Gagal memuat data pos:", error);
-      addToast({
-        title: "Gagal Memuat Data",
-        description: "Terjadi kesalahan saat memuat data pos.",
-        color: "danger",
-      });
+      setDataPos([]);
     } finally {
       setLoadingTable(false);
     }
@@ -132,23 +134,43 @@ const AdminManagePosUtama = () => {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
-      setFormData({
-        id: data.id,
-        nama_pos: data.nama_pos,
-        kode_pos: data.kode_pos,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        created_at: data.created_at,
-      });
-      setSelectedPosition(
-        new LatLng(parseFloat(data.latitude), parseFloat(data.longitude))
-      );
-      onOpen();
+
+      // Sesuai respons baru Anda: data.pos
+      const item = data.pos;
+
+      if (item) {
+        setFormData({
+          id: item.id,
+          nama_pos: item.nama_pos || "",
+          kode_pos: item.kode_pos || "",
+          latitude: item.latitude || "",
+          longitude: item.longitude || "",
+          created_at: item.created_at || "",
+        });
+
+        // Konversi string koordinat dari database ke float untuk Leaflet
+        const lat = parseFloat(item.latitude);
+        const lng = parseFloat(item.longitude);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          // Mengatur posisi marker di peta
+          setSelectedPosition(new LatLng(lat, lng));
+        } else {
+          setSelectedPosition(null);
+          console.error(
+            "Koordinat tidak valid:",
+            item.latitude,
+            item.longitude
+          );
+        }
+
+        onOpen();
+      }
     } catch (error) {
-      console.error("Gagal mengambil data pos:", error);
+      console.error("Gagal mengambil detail pos:", error);
       addToast({
-        title: "Gagal Memuat Data",
-        description: "Tidak dapat memuat detail pos.",
+        title: "Error",
+        description: "Gagal memuat detail pos.",
         color: "danger",
       });
     }
@@ -161,15 +183,16 @@ const AdminManagePosUtama = () => {
     const payload = {
       kode_pos: formData.kode_pos,
       nama_pos: formData.nama_pos,
+      tipe_pos: "utama", // Tembak langsung sesuai instruksi
       latitude: selectedPosition.lat,
       longitude: selectedPosition.lng,
     };
 
     setLoading(true);
-
     try {
-      const method = formData.id ? "PUT" : "POST";
-      const url = formData.id ? `${API_URL}/${formData.id}` : API_URL;
+      const isEdit = !!formData.id;
+      const method = isEdit ? "PUT" : "POST";
+      const url = isEdit ? `${API_URL}/${formData.id}?tipe=utama` : API_URL;
 
       const res = await fetch(url, {
         method,
@@ -180,27 +203,17 @@ const AdminManagePosUtama = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Gagal menyimpan data!");
+      if (!res.ok) throw new Error("Gagal menyimpan!");
 
       await fetchData();
       onClose();
-
       addToast({
-        title: formData.id ? "Data Diperbarui" : "Data Ditambahkan",
-        description: formData.id
-          ? "Data pos berhasil diperbarui."
-          : "Data pos berhasil ditambahkan.",
+        title: "Berhasil",
+        description: "Data tersimpan",
         color: "success",
-        timeout: 3000,
-        shouldShowTimeoutProgress: true,
       });
     } catch (error) {
-      console.error("Error menyimpan data:", error);
-      addToast({
-        title: "Gagal Menyimpan",
-        description: "Terjadi kesalahan saat menyimpan data pos.",
-        color: "danger",
-      });
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -208,8 +221,10 @@ const AdminManagePosUtama = () => {
 
   // Hapus pos
   const handleDelete = async (id: number) => {
+    if (!confirm("Yakin ingin menghapus pos ini?")) return;
     try {
-      await fetch(`${API_URL}/${id}`, {
+      // Tambahkan query param tipe=jaga
+      await fetch(`${API_URL}/${id}?tipe=jaga`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
       });
@@ -220,18 +235,9 @@ const AdminManagePosUtama = () => {
         title: "Data Dihapus",
         description: "Data pos berhasil dihapus.",
         color: "danger",
-        timeout: 3000,
-        shouldShowTimeoutProgress: true,
       });
     } catch (error) {
       console.error("Gagal menghapus pos:", error);
-      addToast({
-        title: "Gagal Menghapus",
-        description: "Terjadi kesalahan saat menghapus data pos.",
-        color: "danger",
-        timeout: 3000,
-        shouldShowTimeoutProgress: true,
-      });
     }
   };
 
